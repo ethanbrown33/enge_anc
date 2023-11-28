@@ -108,7 +108,7 @@ def out_callback(outdata, frames, time, status):
         print(status, flush=True)
     
     if 'source' in audio_data and 'error' in audio_data:
-        # update weights
+        # update the weights
         weights = update_weights(audio_data['source'], audio_data['error'], weights, 0.01)
         
         #process two inputs
