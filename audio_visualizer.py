@@ -112,7 +112,7 @@ def out_callback(outdata, frames, time, status):
         weights = update_weights(audio_data['source'], audio_data['error'], weights, 0.01)
         
         #process two inputs
-        #audio_data['source'] = denoise(audio_data['source'])
+        audio_data['source'] = denoise(audio_data['source'])
         out_audio = filter_output(audio_data['source'], weights)
         outdata[:] = out_audio.reshape(1024, 1)
 
