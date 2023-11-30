@@ -116,7 +116,7 @@ def out_callback(outdata, frames, time, status):
         axis[0,0].plot(audio_data['source']) #original audio
         axis[0,0].setTitle("Amplitude of the Audio Source")
         audio_data['source'] = denoise(audio_data['source'])
-        axis[0,1].plot(audio_data['source']) #original audio post-denoising
+        axis[0,1].plot(audio_data['source']) #original audio after denoising
         axis[0,1].setTitle("Amplitude of the Audio Source Post-Denoising")
         out_audio = filter_output(audio_data['source'], weights)
         axis[1,0].plot(out_audio) #audio after LMS
