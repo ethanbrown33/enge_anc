@@ -3,6 +3,57 @@ import numpy as np
 import sounddevice as sd
 import time
 import matplotlib.pyplot as plt
+import pandas as pd
+import datetime
+import pywt
+from scipy.optimize import curve_fit
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from scipy import stats
+import scipy
+
+def denoise(y2):
+  fft_signal = y2
+  y3 = y2
+  # y3 = []
+  # count = 0
+  # while(count < len(y2)):
+  #   y3.append(y2[count])
+  #   count += 1000
+  def filter_signal(th):
+    f_s = fft_filter(th)
+    return np.real(np.fft.ifft(f_s))
+  def fft_filter(perc):
+      fft_signal = np.fft.fft(y3)
+      fft_abs = np.abs(fft_signal)
+      th=perc*(2*fft_abs[0:int(len(y3))]/((len(y3)))).max()
+      fft_tof=fft_signal.copy()
+      fft_tof_abs=np.abs(fft_tof)
+      fft_tof[fft_tof_abs<=th]=0
+      return fft_tof
+  def fft_filter_amp(th):
+      fft = np.fft.fft(y3)
+      fft_tof=fft.copy()
+      fft_tof_abs=np.abs(fft_tof)
+      fft_tof_abs=2*fft_tof_abs/(len(fft_tof_abs)/2.)
+      fft_tof_abs[fft_tof_abs<=th]=0
+      return fft_tof_abs[0:int(len(fft_tof_abs)/2.)]
+  th_list = np.linspace(0,1,5)
+  th_list = th_list[0:len(th_list)-1]
+  th_list = np.array([0, 0.25, 0.5, 0.75])
+  th_list = np.linspace(0,0.02,1000)
+  th_list = th_list[0:len(th_list)]
+  p_values = []
+  corr_values = []
+  for t in th_list:
+      filt_signal = filter_signal(t)
+      res = stats.spearmanr(y3,y3-filt_signal)
+      p_values.append(res.pvalue)
+      corr_values.append(res.correlation) 
+  th_opt = th_list[np.array(corr_values).argmin()]
+  opt_signal = filter_signal(th_opt)
+  return opt_signal
 
 blocksize = 1024
 weights = np.zeros(blocksize)
@@ -57,12 +108,21 @@ def out_callback(outdata, frames, time, status):
         print(status, flush=True)
     
     if 'source' in audio_data and 'error' in audio_data:
-        # update weights
+        # update the weights
         weights = update_weights(audio_data['source'], audio_data['error'], weights, 0.01)
         
         #process two inputs
+        figure, axis = plt.subplots(2, 2) 
+        axis[0,0].plot(audio_data['source']) #original audio
+        axis[0,0].setTitle("Amplitude of the Audio Source")
+        audio_data['source'] = denoise(audio_data['source'])
+        axis[0,1].plot(audio_data['source']) #original audio after denoising
+        axis[0,1].setTitle("Amplitude of the Audio Source Post-Denoising")
         out_audio = filter_output(audio_data['source'], weights)
+        axis[1,0].plot(out_audio) #audio after LMS
+        axis[1,0].setTitle("Amplitude of the Audio Source Post-LMS")
         outdata[:] = out_audio.reshape(1024, 1)
+        plt.show()
 
     else:
         outdata[:] = np.zeros_like(outdata)
