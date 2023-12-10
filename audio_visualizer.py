@@ -67,6 +67,16 @@ def out_callback(outdata, frames, time, status):
     else:
         outdata[:] = np.zeros_like(outdata)
 
+start_idx = 0
+def callback(outdata, frames, time, status):
+        if status:
+            print(status)
+        global start_idx
+        t = (start_idx + np.arange(frames)) / 44100
+        t = t.reshape(-1, 1)
+        outdata[:] = 0.5 * np.sin(2 * np.pi * 300 * t)
+        start_idx += frames
+
 def update_weights(src, err, w, lr):
     error = error_estimation(src, err, w)
     return np.add(w, lr * np.multiply(error, src))
@@ -81,7 +91,7 @@ def error_estimation(src, err, w):
 print("Program START")
 with sd.InputStream(callback=src_callback, blocksize=blocksize, channels=1, device=2), \
      sd.InputStream(callback=err_callback, blocksize=blocksize, channels=1, device=1), \
-     sd.OutputStream(callback=out_callback, blocksize=blocksize, channels=1, device=6):
+     sd.OutputStream(callback=out_callback, blocksize=blocksize, channels=1, device=5):
 
     time.sleep(0.5)
     while True:
